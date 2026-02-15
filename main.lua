@@ -17,15 +17,18 @@ local IsVisible = true
 
 -- Colors
 local Colors = {
-    Background = Color3.fromRGB(20, 20, 25),
-    Secondary = Color3.fromRGB(30, 30, 35),
-    Accent = Color3.fromRGB(100, 120, 255),
-    Text = Color3.fromRGB(200, 200, 210),
-    TextDim = Color3.fromRGB(140, 140, 150),
-    Border = Color3.fromRGB(45, 45, 55),
-    Hover = Color3.fromRGB(40, 40, 48),
-    Enabled = Color3.fromRGB(100, 120, 255),
-    Disabled = Color3.fromRGB(60, 60, 70)
+    Background = Color3.fromRGB(15, 15, 18),
+    Secondary = Color3.fromRGB(20, 20, 24),
+    Tertiary = Color3.fromRGB(25, 25, 30),
+    Accent = Color3.fromRGB(67, 181, 129),
+    AccentHover = Color3.fromRGB(77, 191, 139),
+    Text = Color3.fromRGB(220, 220, 230),
+    TextDim = Color3.fromRGB(150, 150, 160),
+    Border = Color3.fromRGB(35, 35, 40),
+    Hover = Color3.fromRGB(30, 30, 36),
+    Enabled = Color3.fromRGB(67, 181, 129),
+    Disabled = Color3.fromRGB(50, 50, 55),
+    Shadow = Color3.fromRGB(0, 0, 0)
 }
 
 -- Helper Functions
@@ -87,8 +90,25 @@ function FrozHub:CreateWindow(title)
         Title = title,
         Tabs = {},
         TabButtons = {},
-        CurrentTab = nil
+        CurrentTab = nil,
+        SidebarOpen = true
     }
+    
+    -- Shadow Background
+    local ShadowBackground = CreateElement("Frame", {
+        Name = "ShadowBackground",
+        Parent = ScreenGui,
+        BackgroundColor3 = Colors.Shadow,
+        BackgroundTransparency = 0.3,
+        BorderSizePixel = 0,
+        Position = UDim2.new(0.5, -360, 0.5, -260),
+        Size = UDim2.new(0, 720, 0, 520)
+    })
+    
+    CreateElement("UICorner", {
+        Parent = ShadowBackground,
+        CornerRadius = UDim.new(0, 8)
+    })
     
     -- Main Frame
     local MainFrame = CreateElement("Frame", {
@@ -98,12 +118,19 @@ function FrozHub:CreateWindow(title)
         BorderSizePixel = 0,
         Position = UDim2.new(0.5, -350, 0.5, -250),
         Size = UDim2.new(0, 700, 0, 500),
-        ClipsDescendants = true
+        ClipsDescendants = false
     })
     
     CreateElement("UICorner", {
         Parent = MainFrame,
         CornerRadius = UDim.new(0, 6)
+    })
+    
+    CreateElement("UIStroke", {
+        Parent = MainFrame,
+        Color = Colors.Border,
+        Thickness = 1,
+        Transparency = 0.5
     })
     
     -- Make draggable
@@ -137,16 +164,35 @@ function FrozHub:CreateWindow(title)
                 framePos.X.Scale, framePos.X.Offset + delta.X,
                 framePos.Y.Scale, framePos.Y.Offset + delta.Y
             )
+            ShadowBackground.Position = UDim2.new(
+                framePos.X.Scale, framePos.X.Offset + delta.X - 10,
+                framePos.Y.Scale, framePos.Y.Offset + delta.Y - 10
+            )
         end
     end)
     
-    -- Top Bar
-    local TopBar = CreateElement("Frame", {
-        Name = "TopBar",
+    -- Left Sidebar
+    local Sidebar = CreateElement("Frame", {
+        Name = "Sidebar",
         Parent = MainFrame,
         BackgroundColor3 = Colors.Secondary,
         BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, 45)
+        Size = UDim2.new(0, 180, 1, 0)
+    })
+    
+    CreateElement("UICorner", {
+        Parent = Sidebar,
+        CornerRadius = UDim.new(0, 6)
+    })
+    
+    -- Top Bar (for title and collapse button)
+    local TopBar = CreateElement("Frame", {
+        Name = "TopBar",
+        Parent = MainFrame,
+        BackgroundColor3 = Colors.Tertiary,
+        BorderSizePixel = 0,
+        Position = UDim2.new(0, 180, 0, 0),
+        Size = UDim2.new(1, -180, 0, 50)
     })
     
     CreateElement("UICorner", {
@@ -154,43 +200,129 @@ function FrozHub:CreateWindow(title)
         CornerRadius = UDim.new(0, 6)
     })
     
-    -- Title
+    -- Title in top bar
     local TitleLabel = CreateElement("TextLabel", {
         Name = "Title",
         Parent = TopBar,
         BackgroundTransparency = 1,
-        Position = UDim2.new(0, 15, 0, 0),
-        Size = UDim2.new(0, 200, 1, 0),
+        Position = UDim2.new(0, 20, 0, 0),
+        Size = UDim2.new(1, -70, 1, 0),
         Font = Enum.Font.GothamBold,
         Text = title,
         TextColor3 = Colors.Text,
+        TextSize = 18,
+        TextXAlignment = Enum.TextXAlignment.Left
+    })
+    
+    -- Sidebar Title
+    local SidebarTitle = CreateElement("TextLabel", {
+        Name = "SidebarTitle",
+        Parent = Sidebar,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 20, 0, 15),
+        Size = UDim2.new(1, -40, 0, 30),
+        Font = Enum.Font.GothamBold,
+        Text = title,
+        TextColor3 = Colors.Accent,
         TextSize = 16,
         TextXAlignment = Enum.TextXAlignment.Left
     })
     
-    -- Tab Container (Horizontal tabs)
-    local TabContainer = CreateElement("Frame", {
-        Name = "TabContainer",
+    -- Collapse Button
+    local CollapseButton = CreateElement("TextButton", {
+        Name = "CollapseButton",
         Parent = TopBar,
+        BackgroundColor3 = Colors.Secondary,
+        Position = UDim2.new(1, -45, 0.5, -15),
+        Size = UDim2.new(0, 30, 0, 30),
+        Font = Enum.Font.GothamBold,
+        Text = "☰",
+        TextColor3 = Colors.Text,
+        TextSize = 16,
+        AutoButtonColor = false,
+        BorderSizePixel = 0
+    })
+    
+    CreateElement("UICorner", {
+        Parent = CollapseButton,
+        CornerRadius = UDim.new(0, 4)
+    })
+    
+    CreateElement("UIStroke", {
+        Parent = CollapseButton,
+        Color = Colors.Border,
+        Thickness = 1,
+        Transparency = 0.5
+    })
+    
+    -- Collapse functionality
+    CollapseButton.MouseButton1Click:Connect(function()
+        Window.SidebarOpen = not Window.SidebarOpen
+        
+        if Window.SidebarOpen then
+            Tween(Sidebar, {Size = UDim2.new(0, 180, 1, 0)}, 0.3)
+            Tween(TopBar, {Position = UDim2.new(0, 180, 0, 0), Size = UDim2.new(1, -180, 0, 50)}, 0.3)
+            Tween(CollapseButton, {Rotation = 0}, 0.3)
+            for _, frame in pairs(Window.Tabs) do
+                Tween(frame, {Position = UDim2.new(0, 180, 0, 50), Size = UDim2.new(1, -180, 1, -50)}, 0.3)
+            end
+        else
+            Tween(Sidebar, {Size = UDim2.new(0, 0, 1, 0)}, 0.3)
+            Tween(TopBar, {Position = UDim2.new(0, 0, 0, 0), Size = UDim2.new(1, 0, 0, 50)}, 0.3)
+            Tween(CollapseButton, {Rotation = 180}, 0.3)
+            for _, frame in pairs(Window.Tabs) do
+                Tween(frame, {Position = UDim2.new(0, 0, 0, 50), Size = UDim2.new(1, 0, 1, -50)}, 0.3)
+            end
+        end
+    end)
+    
+    -- Hover effects for collapse button
+    CollapseButton.MouseEnter:Connect(function()
+        Tween(CollapseButton, {BackgroundColor3 = Colors.Hover})
+    end)
+    
+    CollapseButton.MouseLeave:Connect(function()
+        Tween(CollapseButton, {BackgroundColor3 = Colors.Secondary})
+    end)
+    
+    -- Tab Container (Vertical sidebar tabs)
+    local TabContainer = CreateElement("ScrollingFrame", {
+        Name = "TabContainer",
+        Parent = Sidebar,
         BackgroundTransparency = 1,
-        Position = UDim2.new(0, 220, 0, 0),
-        Size = UDim2.new(1, -220, 1, 0)
+        Position = UDim2.new(0, 0, 0, 55),
+        Size = UDim2.new(1, 0, 1, -55),
+        BorderSizePixel = 0,
+        ScrollBarThickness = 0,
+        CanvasSize = UDim2.new(0, 0, 0, 0)
     })
     
     local TabLayout = CreateElement("UIListLayout", {
         Parent = TabContainer,
-        FillDirection = Enum.FillDirection.Horizontal,
+        FillDirection = Enum.FillDirection.Vertical,
         SortOrder = Enum.SortOrder.LayoutOrder,
         Padding = UDim.new(0, 5)
     })
+    
+    CreateElement("UIPadding", {
+        Parent = TabContainer,
+        PaddingLeft = UDim.new(0, 10),
+        PaddingRight = UDim.new(0, 10),
+        PaddingTop = UDim.new(0, 5)
+    })
+    
+    -- Update canvas size
+    TabLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        TabContainer.CanvasSize = UDim2.new(0, 0, 0, TabLayout.AbsoluteContentSize.Y + 10)
+    end)
     
     -- Content Container
     local ContentContainer = CreateElement("Frame", {
         Name = "ContentContainer",
         Parent = MainFrame,
         BackgroundTransparency = 1,
-        Position = UDim2.new(0, 0, 0, 45),
-        Size = UDim2.new(1, 0, 1, -45)
+        Position = UDim2.new(0, 180, 0, 50),
+        Size = UDim2.new(1, -180, 1, -50)
     })
     
     -- Create Tab
@@ -201,34 +333,92 @@ function FrozHub:CreateWindow(title)
             Elements = {}
         }
         
-        -- Tab Button
+        -- Tab Button (Vertical sidebar style)
         local TabButton = CreateElement("TextButton", {
             Name = tabName,
             Parent = TabContainer,
             BackgroundColor3 = Colors.Background,
             BorderSizePixel = 0,
-            Size = UDim2.new(0, 100, 0, 35),
-            Font = Enum.Font.Gotham,
-            Text = tabName,
+            Size = UDim2.new(1, 0, 0, 45),
+            Font = Enum.Font.GothamSemibold,
+            Text = "",
             TextColor3 = Colors.TextDim,
-            TextSize = 13,
+            TextSize = 14,
             AutoButtonColor = false
         })
         
         CreateElement("UICorner", {
             Parent = TabButton,
-            CornerRadius = UDim.new(0, 4)
+            CornerRadius = UDim.new(0, 6)
+        })
+        
+        CreateElement("UIStroke", {
+            Parent = TabButton,
+            Color = Colors.Border,
+            Thickness = 1,
+            Transparency = 0.8
+        })
+        
+        -- Tab Icon (emoji/symbol)
+        local icons = {
+            Player = "👤",
+            Aiming = "🎯",
+            Settings = "⚙️",
+            Combat = "⚔️",
+            Visuals = "👁️",
+            Misc = "🔧",
+            World = "🌍"
+        }
+        
+        local TabIcon = CreateElement("TextLabel", {
+            Parent = TabButton,
+            BackgroundTransparency = 1,
+            Position = UDim2.new(0, 15, 0, 0),
+            Size = UDim2.new(0, 30, 1, 0),
+            Font = Enum.Font.GothamBold,
+            Text = icons[tabName] or "📋",
+            TextColor3 = Colors.TextDim,
+            TextSize = 18,
+            TextXAlignment = Enum.TextXAlignment.Left
+        })
+        
+        -- Tab Label
+        local TabLabel = CreateElement("TextLabel", {
+            Parent = TabButton,
+            BackgroundTransparency = 1,
+            Position = UDim2.new(0, 45, 0, 0),
+            Size = UDim2.new(1, -50, 1, 0),
+            Font = Enum.Font.GothamSemibold,
+            Text = tabName,
+            TextColor3 = Colors.TextDim,
+            TextSize = 14,
+            TextXAlignment = Enum.TextXAlignment.Left
+        })
+        
+        -- Active indicator
+        local ActiveIndicator = CreateElement("Frame", {
+            Parent = TabButton,
+            BackgroundColor3 = Colors.Accent,
+            Position = UDim2.new(0, 0, 0, 0),
+            Size = UDim2.new(0, 3, 1, 0),
+            BorderSizePixel = 0,
+            Visible = false
+        })
+        
+        CreateElement("UICorner", {
+            Parent = ActiveIndicator,
+            CornerRadius = UDim.new(0, 2)
         })
         
         -- Tab Content Frame
         local TabFrame = CreateElement("ScrollingFrame", {
             Name = tabName .. "Tab",
             Parent = ContentContainer,
-            BackgroundTransparency = 1,
+            BackgroundColor3 = Colors.Background,
             BorderSizePixel = 0,
             Size = UDim2.new(1, 0, 1, 0),
             CanvasSize = UDim2.new(0, 0, 0, 0),
-            ScrollBarThickness = 4,
+            ScrollBarThickness = 6,
             ScrollBarImageColor3 = Colors.Accent,
             Visible = false
         })
@@ -255,13 +445,25 @@ function FrozHub:CreateWindow(title)
         -- Tab Button Click
         TabButton.MouseButton1Click:Connect(function()
             for _, btn in pairs(Window.TabButtons) do
-                Tween(btn, {BackgroundColor3 = Colors.Background, TextColor3 = Colors.TextDim})
+                local btnIcon = btn:FindFirstChild("TextLabel")
+                local btnLabel = btn:FindFirstChildWhichIsA("TextLabel", true)
+                local btnIndicator = btn:FindFirstChild("Frame")
+                
+                Tween(btn, {BackgroundColor3 = Colors.Background})
+                if btnIcon then Tween(btnIcon, {TextColor3 = Colors.TextDim}) end
+                if btnLabel and btnLabel.Name ~= "TextLabel" then 
+                    Tween(btnLabel, {TextColor3 = Colors.TextDim}) 
+                end
+                if btnIndicator then btnIndicator.Visible = false end
             end
             for _, frame in pairs(Window.Tabs) do
                 frame.Visible = false
             end
             
-            Tween(TabButton, {BackgroundColor3 = Colors.Accent, TextColor3 = Color3.fromRGB(255, 255, 255)})
+            Tween(TabButton, {BackgroundColor3 = Colors.Tertiary})
+            Tween(TabIcon, {TextColor3 = Colors.Accent})
+            Tween(TabLabel, {TextColor3 = Colors.Text})
+            ActiveIndicator.Visible = true
             TabFrame.Visible = true
             Window.CurrentTab = Tab
         end)
@@ -284,7 +486,10 @@ function FrozHub:CreateWindow(title)
         
         -- Auto-select first tab
         if #Window.TabButtons == 1 then
-            Tween(TabButton, {BackgroundColor3 = Colors.Accent, TextColor3 = Color3.fromRGB(255, 255, 255)})
+            Tween(TabButton, {BackgroundColor3 = Colors.Tertiary})
+            Tween(TabIcon, {TextColor3 = Colors.Accent})
+            Tween(TabLabel, {TextColor3 = Colors.Text})
+            ActiveIndicator.Visible = true
             TabFrame.Visible = true
             Window.CurrentTab = Tab
         end
@@ -299,7 +504,7 @@ function FrozHub:CreateWindow(title)
             local SectionFrame = CreateElement("Frame", {
                 Name = sectionName,
                 Parent = TabFrame,
-                BackgroundColor3 = Colors.Secondary,
+                BackgroundColor3 = Colors.Tertiary,
                 BorderSizePixel = 0,
                 Size = UDim2.new(1, 0, 0, 50),
                 AutomaticSize = Enum.AutomaticSize.Y
@@ -307,7 +512,14 @@ function FrozHub:CreateWindow(title)
             
             CreateElement("UICorner", {
                 Parent = SectionFrame,
-                CornerRadius = UDim.new(0, 4)
+                CornerRadius = UDim.new(0, 8)
+            })
+            
+            CreateElement("UIStroke", {
+                Parent = SectionFrame,
+                Color = Colors.Border,
+                Thickness = 1,
+                Transparency = 0.6
             })
             
             local SectionLayout = CreateElement("UIListLayout", {
@@ -524,13 +736,20 @@ function FrozHub:CreateWindow(title)
                 
                 CreateElement("UICorner", {
                     Parent = ButtonFrame,
-                    CornerRadius = UDim.new(0, 4)
+                    CornerRadius = UDim.new(0, 6)
+                })
+                
+                CreateElement("UIStroke", {
+                    Parent = ButtonFrame,
+                    Color = Colors.Accent,
+                    Thickness = 1,
+                    Transparency = 0.3
                 })
                 
                 ButtonFrame.MouseButton1Click:Connect(callback)
                 
                 ButtonFrame.MouseEnter:Connect(function()
-                    Tween(ButtonFrame, {BackgroundColor3 = Color3.fromRGB(120, 140, 255)})
+                    Tween(ButtonFrame, {BackgroundColor3 = Colors.AccentHover})
                 end)
                 
                 ButtonFrame.MouseLeave:Connect(function()
@@ -564,7 +783,7 @@ function FrozHub:CreateWindow(title)
                 
                 local DropdownButton = CreateElement("TextButton", {
                     Parent = DropdownFrame,
-                    BackgroundColor3 = Colors.Disabled,
+                    BackgroundColor3 = Colors.Secondary,
                     Position = UDim2.new(0, 0, 0, 25),
                     Size = UDim2.new(1, 0, 0, 30),
                     Font = Enum.Font.Gotham,
@@ -577,7 +796,14 @@ function FrozHub:CreateWindow(title)
                 
                 CreateElement("UICorner", {
                     Parent = DropdownButton,
-                    CornerRadius = UDim.new(0, 4)
+                    CornerRadius = UDim.new(0, 6)
+                })
+                
+                CreateElement("UIStroke", {
+                    Parent = DropdownButton,
+                    Color = Colors.Border,
+                    Thickness = 1,
+                    Transparency = 0.6
                 })
                 
                 local Arrow = CreateElement("TextLabel", {
@@ -587,13 +813,13 @@ function FrozHub:CreateWindow(title)
                     Size = UDim2.new(0, 25, 1, 0),
                     Font = Enum.Font.GothamBold,
                     Text = "▼",
-                    TextColor3 = Colors.Text,
+                    TextColor3 = Colors.Accent,
                     TextSize = 10
                 })
                 
                 local OptionsList = CreateElement("Frame", {
                     Parent = DropdownFrame,
-                    BackgroundColor3 = Colors.Background,
+                    BackgroundColor3 = Colors.Secondary,
                     Position = UDim2.new(0, 0, 0, 60),
                     Size = UDim2.new(1, 0, 0, 0),
                     BorderSizePixel = 0,
@@ -602,7 +828,14 @@ function FrozHub:CreateWindow(title)
                 
                 CreateElement("UICorner", {
                     Parent = OptionsList,
-                    CornerRadius = UDim.new(0, 4)
+                    CornerRadius = UDim.new(0, 6)
+                })
+                
+                CreateElement("UIStroke", {
+                    Parent = OptionsList,
+                    Color = Colors.Border,
+                    Thickness = 1,
+                    Transparency = 0.6
                 })
                 
                 local OptionsLayout = CreateElement("UIListLayout", {
@@ -613,7 +846,7 @@ function FrozHub:CreateWindow(title)
                 for _, option in ipairs(options) do
                     local OptionButton = CreateElement("TextButton", {
                         Parent = OptionsList,
-                        BackgroundColor3 = Colors.Secondary,
+                        BackgroundColor3 = Colors.Tertiary,
                         Size = UDim2.new(1, 0, 0, 28),
                         Font = Enum.Font.Gotham,
                         Text = option,
@@ -638,7 +871,7 @@ function FrozHub:CreateWindow(title)
                     end)
                     
                     OptionButton.MouseLeave:Connect(function()
-                        Tween(OptionButton, {BackgroundColor3 = Colors.Secondary})
+                        Tween(OptionButton, {BackgroundColor3 = Colors.Tertiary})
                     end)
                 end
                 
